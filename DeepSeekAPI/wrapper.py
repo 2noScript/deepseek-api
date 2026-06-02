@@ -28,13 +28,13 @@ class IOMethods(Enum):
     PRINT=1
     RETURN=2
     STREAMDOWN=3
-def DeepSeekChatExample(DS_SESSION_ID,AUTHORIZATION_TOKEN,message,mode,thinking_enabled=False,search_enabled=False):
+def DeepSeekChatExample(DS_SESSION_ID,AUTHORIZATION_TOKEN,message,mode,thinking_enabled=False,search_enabled=False,model_type="default"):
     if mode==IOMethods.STREAMDOWN:
         proc=subprocess.Popen(
             [
                 sys.executable,
                 '-c',
-                f"from DeepSeekAPI import DeepSeekChat; DeepSeekChat({repr(DS_SESSION_ID)},{repr(AUTHORIZATION_TOKEN)}).send_message({repr(message)},True,{thinking_enabled},{search_enabled})"
+                f"from DeepSeekAPI import DeepSeekChat; DeepSeekChat({repr(DS_SESSION_ID)},{repr(AUTHORIZATION_TOKEN)}).send_message({repr(message)},True,{thinking_enabled},{search_enabled},{repr(model_type)})"
             ],
             stdout=subprocess.PIPE,
             text=False
@@ -44,7 +44,7 @@ def DeepSeekChatExample(DS_SESSION_ID,AUTHORIZATION_TOKEN,message,mode,thinking_
         emit(proc.stdout)
         return
     else:
-        ret=DeepSeekChat(DS_SESSION_ID,AUTHORIZATION_TOKEN).send_message(message,mode==IOMethods.PRINT,thinking_enabled,search_enabled)
+        ret=DeepSeekChat(DS_SESSION_ID,AUTHORIZATION_TOKEN).send_message(message,mode==IOMethods.PRINT,thinking_enabled,search_enabled,model_type)
         if mode==IOMethods.PRINT:
             return
         return ret

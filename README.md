@@ -74,7 +74,7 @@ curl http://localhost:8000/v1/models
 # Chat completion (non-streaming)
 curl http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -d '{"model": "deepseek-chat", "messages": [{"role": "user", "content": "Hello!"}]}'
+  -d '{"model": "deepseek-v3", "messages": [{"role": "user", "content": "Hello!"}]}'
 
 # Chat completion with DeepSeek R1 (reasoning model)
 curl http://localhost:8000/v1/chat/completions \
@@ -83,8 +83,10 @@ curl http://localhost:8000/v1/chat/completions \
 ```
 
 **Supported models:**
-- `deepseek-chat` or `deepseek-v3` - Fast responses without extended thinking
-- `deepseek-r1` or any model name containing "r1" or "reasoning" - Reasoning model with extended thinking
+- `deepseek-v3` - Default model without extended thinking
+- `deepseek-r1` - Default model with extended thinking
+- `deepseek-v4` - Expert model without extended thinking
+- `deepseek-r4` - Expert model with extended thinking
 
 ### Python API
 

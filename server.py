@@ -11,7 +11,7 @@ import time
 import sys
 from io import StringIO
 from flask import Flask, request, jsonify, Response, stream_with_context
-from DeepSeekAPI import DeepSeekChat, DeepSeekChatIOMethods
+from DeepSeekAPI import DeepSeekChat
 
 app = Flask(__name__)
 
@@ -30,15 +30,14 @@ def get_tokens():
 
 DS_SESSION_ID, AUTHORIZATION_TOKEN = get_tokens()
 
-def get_thinking_enabled(model: str) -> bool:
-    """Determine if thinking is enabled based on model name"""
+def get_model_config(model: str):
+    """Map OpenAI-compatible model names to DeepSeek web model flags."""
     model_lower = model.lower()
-    # deepseek-r1 enables thinking, deepseek-v3 disables it
-    if 'r1' in model_lower or 'reasoning' in model_lower:
-        return True
-    return False
+    model_type = "expert" if "v4" in model_lower or "r4" in model_lower or "expert" in model_lower else "default"
+    thinking_enabled = "r1" in model_lower or "r4" in model_lower or "reasoning" in model_lower or "reasoner" in model_lower
+    return model_type, thinking_enabled
 
-def chat_non_streaming(messages, thinking_enabled=True):
+def chat_non_streaming(messages, model_type="default", thinking_enabled=True):
     """Non-streaming chat"""
     user_message = messages[-1]["content"] if messages else ""
     
@@ -48,7 +47,7 @@ def chat_non_streaming(messages, thinking_enabled=True):
     
     try:
         chat = DeepSeekChat(DS_SESSION_ID, AUTHORIZATION_TOKEN)
-        chat.send_message(user_message, printing=True, thinking_enabled=thinking_enabled, search_enabled=False)
+        chat.send_message(user_message, printing=True, thinking_enabled=thinking_enabled, search_enabled=False, model_type=model_type)
     finally:
         sys.stdout = old_stdout
     
@@ -74,7 +73,7 @@ def chat_non_streaming(messages, thinking_enabled=True):
     
     return response_text.strip() if response_text else output
 
-def chat_streaming(messages, thinking_enabled=True):
+def chat_streaming(messages, model_type="default", thinking_enabled=True):
     """Streaming chat using SSE"""
     user_message = messages[-1]["content"] if messages else ""
     
@@ -84,7 +83,7 @@ def chat_streaming(messages, thinking_enabled=True):
     
     try:
         chat = DeepSeekChat(DS_SESSION_ID, AUTHORIZATION_TOKEN)
-        chat.send_message(user_message, printing=True, thinking_enabled=thinking_enabled, search_enabled=False)
+        chat.send_message(user_message, printing=True, thinking_enabled=thinking_enabled, search_enabled=False, model_type=model_type)
     finally:
         sys.stdout = old_stdout
     
@@ -124,15 +123,15 @@ def chat_completions():
     messages = data.get("messages", [])
     stream = data.get("stream", False)
     
-    # Determine model - default to deepseek-chat
-    model = data.get("model", "deepseek-chat")
+    # Determine model - default to DeepSeek V3.
+    model = data.get("model", "deepseek-v3")
     
-    # Determine thinking enabled based on model name
-    thinking_enabled = get_thinking_enabled(model)
+    # Determine DeepSeek web model flags based on model name.
+    model_type, thinking_enabled = get_model_config(model)
     
     if stream:
         return Response(
-            stream_with_context(chat_streaming(messages, thinking_enabled)),
+            stream_with_context(chat_streaming(messages, model_type, thinking_enabled)),
             mimetype='text/event-stream',
             headers={
                 'Cache-Control': 'no-cache',
@@ -140,7 +139,7 @@ def chat_completions():
             }
         )
     else:
-        result = chat_non_streaming(messages, thinking_enabled)
+        result = chat_non_streaming(messages, model_type, thinking_enabled)
         
         return jsonify({
             "id": f"chatcmpl-{int(time.time())}",
@@ -180,6 +179,20 @@ def list_models():
                 "created": 1704067200,
                 "owned_by": "deepseek",
                 "description": "DeepSeek R1 - Reasoning model with extended thinking"
+            },
+            {
+                "id": "deepseek-v4",
+                "object": "model",
+                "created": 1704067200,
+                "owned_by": "deepseek",
+                "description": "DeepSeek V4 - Expert model without extended thinking"
+            },
+            {
+                "id": "deepseek-r4",
+                "object": "model",
+                "created": 1704067200,
+                "owned_by": "deepseek",
+                "description": "DeepSeek R4 - Expert reasoning model with extended thinking"
             }
         ]
     })

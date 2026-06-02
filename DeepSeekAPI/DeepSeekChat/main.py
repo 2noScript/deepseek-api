@@ -21,8 +21,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import requests
 import json
-import time
-import random
 from traceback import format_exc as backtrace
 class DeepSeekChat:
     def __init__(self,ds_session_id,authorization_token):
@@ -95,11 +93,9 @@ class DeepSeekChat:
             raise
         except Exception as e:
             return False,''
-    def generate_client_stream_id(self):
-        timestamp = time.strftime("%Y%m%d")
-        random_hex = ''.join(random.choices('0123456789abcdef', k=16))
-        return f"{timestamp}-{random_hex}"
-    def send_message(self,message,printing=None,thinking_enabled=False,search_enabled=False):
+    def send_message(self,message,printing=None,thinking_enabled=False,search_enabled=False,model_type="default"):
+        if model_type not in ("default", "expert"):
+            return {"ok": False, "content": "model_type must be 'default' or 'expert'."}
         if not self.chat_session_id:
             if not self.create_chat_session():
                 return {"ok": False, "content": "Can't create chat session."}
@@ -118,12 +114,13 @@ class DeepSeekChat:
         data = {
             "chat_session_id": self.chat_session_id,
             "parent_message_id": self.parent_message_id,
+            "model_type": model_type,
             "prompt": message,
             "ref_file_ids": [],
             "thinking_enabled": thinking_enabled,
-            "search_enabled": search_enabled,
-            "client_stream_id": self.generate_client_stream_id(),
-            "stream": True
+            "search_enabled": False,
+            "action": None,
+            "preempt": False
         }
         try:
             response = self.session.post(
@@ -251,7 +248,8 @@ class DeepSeekChat:
                 if search_enabled:
                     ret["citation"]=citation
                 ret["thinking_enabled"]=thinking_enabled
-                ret["search_enabled"]=search_enabled
+                ret["search_enabled"]=False
+                ret["model_type"]=model_type
                 ret["response"]=respond
                 if len(title)>0:
                     ret["title"]=title

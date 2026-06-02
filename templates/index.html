@@ -460,15 +460,17 @@
     <div>
       <label class="field-label" for="modelSelect">模型</label>
       <select id="modelSelect">
-        <option value="deepseek-chat">deepseek-chat</option>
-        <option value="deepseek-reasoner">deepseek-reasoner（思考模式）</option>
+        <option value="deepseek-v3">deepseek-v3</option>
+        <option value="deepseek-r1">deepseek-r1（思考模式）</option>
+        <option value="deepseek-v4">deepseek-v4（专家）</option>
+        <option value="deepseek-r4">deepseek-r4（专家思考）</option>
       </select>
     </div>
 
     <div class="toggle-row">
       <span>联网搜索</span>
       <label class="toggle">
-        <input type="checkbox" id="searchToggle" />
+        <input type="checkbox" id="searchToggle" disabled />
         <span class="slider"></span>
       </label>
     </div>
@@ -577,7 +579,7 @@
       const s = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
       sessionIdEl.value  = s.sessionId  || '';
       authTokenEl.value  = s.authToken  || '';
-      modelSelect.value  = s.model      || 'deepseek-chat';
+      modelSelect.value  = s.model      || 'deepseek-v3';
       searchToggle.checked = s.search   || false;
       updateStatus();
     } catch {}
@@ -598,7 +600,7 @@
     localStorage.removeItem(STORAGE_KEY);
     sessionIdEl.value = '';
     authTokenEl.value = '';
-    modelSelect.value = 'deepseek-chat';
+    modelSelect.value = 'deepseek-v3';
     searchToggle.checked = false;
     updateStatus();
     showToast('设置已重置', false);
@@ -736,7 +738,7 @@
     try {
       const authHeader = `Bearer ${settings.sessionId}:${settings.authToken}`;
       const body = JSON.stringify({
-        model: settings.model || 'deepseek-chat',
+        model: settings.model || 'deepseek-v3',
         messages: sessionHistory,
         stream: true,
         search_enabled: settings.search || false,
