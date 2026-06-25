@@ -93,7 +93,7 @@ class DeepSeekChat:
             raise
         except Exception as e:
             return False,''
-    def send_message(self,message,printing=None,thinking_enabled=False,search_enabled=False,model_type="default"):
+    def send_message(self,message,printing=None,thinking_enabled=False,search_enabled=False,model_type="default",text_callback=None):
         if model_type not in ("default", "expert"):
             return {"ok": False, "content": "model_type must be 'default' or 'expert'."}
         if not self.chat_session_id:
@@ -148,7 +148,10 @@ class DeepSeekChat:
                 citation={}
                 sd_remains=""
                 def send_to_sd(text):
-                    print(text,end='',flush=True)
+                    if text_callback:
+                        text_callback(text)
+                    if printing:
+                        print(text,end='',flush=True)
                 def parse_output(data,line):
                     nonlocal event,think,respond,generate_mode,parid,msgid,thinktime
                     if not data:
@@ -164,7 +167,7 @@ class DeepSeekChat:
                             pass
                         else:
                             raise Exception(f"Unexptected string in mode {generate_mode}\nData: {line}")
-                        if printing:
+                        if printing or text_callback:
                             send_to_sd(data)
                         return
                     if type(data)==list:
@@ -174,7 +177,7 @@ class DeepSeekChat:
                     if type(data)==dict:
                         if generate_mode=='SEARCH' and 'url' in data:
                             citation[data.get('cite_index')]=data
-                            if printing:
+                            if printing or text_callback:
                                 send_to_sd(f"{data.get('cite_index','?')}. [{data.get('title',data.get('site_name','UNKNOWN'))} - {data.get('site_name','UNKNOWN')}]({data['url']})\n")
                                 send_to_sd('> '+data.get('snippet','')+"\n")
                         elif 'v' in data and len(data)==1:
