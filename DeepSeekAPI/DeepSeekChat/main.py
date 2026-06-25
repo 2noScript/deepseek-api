@@ -167,7 +167,8 @@ class DeepSeekChat:
                         elif generate_mode=='TIP':
                             pass
                         else:
-                            raise Exception(f"Unexptected string in mode {generate_mode}\nData: {line}")
+                            if printing:
+                                print(f"\n[Warning] Unexpected string in mode {generate_mode}: {data}\n")
                         if printing or text_callback:
                             send_to_sd(data)
                         return
@@ -206,7 +207,8 @@ class DeepSeekChat:
                             elif tp=='has_pending_fragment' or tp=='conversation_mode' or tp=='quasi_status':
                                 pass
                             else:
-                                raise Exception(f"Unknown 'p' field: {tp}\nData: {line}")
+                                if printing:
+                                    print(f"\n[Warning] Unknown 'p' field: {tp} in data: {data}\n")
                         elif 'type' in data and data['type']:
                             if generate_mode!=data['type']:
                                 if printing:
@@ -215,16 +217,19 @@ class DeepSeekChat:
                             if 'content' in data:
                                 parse_output(data['content'],line)
                         else:
-                            raise Exception(f"Cannot parse dict {json.dumps(data,separators=(',',':'))}\nData: {line}")
+                            if printing:
+                                print(f"\n[Warning] Cannot parse dict {json.dumps(data,separators=(',',':'))}\nData: {line}\n")
                     else:
-                        raise Exception(f"Unrecognizable type {type(data)}\nData: {line}")
+                        if printing:
+                            print(f"\n[Warning] Unrecognizable type {type(data)}: {data}\n")
                 send_to_sd('\n')
                 for line in response.iter_lines(decode_unicode=True):
                     if line and len(line)>0:
                         if type(line)==str:
                             if line.startswith('data: '):
                                 data=json.loads(line[6:])
-                                if event=='update_session':
+                                is_update = isinstance(data, dict) and ('p' in data or 'v' in data or 'response' in data)
+                                if event=='update_session' or is_update:
                                     parse_output(data,line)
                                 elif event in ['finish','close']:
                                     pass
@@ -239,7 +244,7 @@ class DeepSeekChat:
                                     if printing:
                                         print(f"\n[Toast] {data.get('content') if type(data)==dict else data}\n")
                                 else:
-                                    if printing:
+                                    if printing and not is_update:
                                         print(f"\n[Warning] Unknown event: {event} with data: {data}\n")
                             elif line.startswith('event: '):
                                 event=line[7:]
