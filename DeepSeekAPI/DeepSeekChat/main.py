@@ -161,7 +161,8 @@ class DeepSeekChat:
                     if type(data)==str:
                         if generate_mode=='THINK':
                             think+=data
-                        elif generate_mode=='RESPONSE':
+                        elif generate_mode in ('RESPONSE', ''):
+                            # '' mode: DeepSeek may send content before explicit type event (e.g. fragments/-1/content)
                             respond+=data
                         elif generate_mode=='TIP':
                             pass
