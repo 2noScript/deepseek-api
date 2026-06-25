@@ -255,8 +255,7 @@ class DeepSeekChat:
                     ret["title"]=title
                 return {"ok": True, "content": ret}
             else:
-                print(f"HTTP ERROR: {response.status_code}\n{response.text}")
-                return None
+                return {"ok": False, "content": f"HTTP {response.status_code}: {response.text[:500]}"}
         except Exception as e:
             print(backtrace())
             return {"ok": False, "content": str(e)}
