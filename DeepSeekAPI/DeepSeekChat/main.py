@@ -233,12 +233,20 @@ class DeepSeekChat:
                                 elif event=='ready' and ('request_message_id' in data or 'response_message_id' in data):
                                     reqid=data.get('request_message_id',reqid)
                                     resid=data.get('response_message_id',resid)
+                                elif event=='toast':
+                                    if type(data)==dict and data.get('type') == 'error':
+                                        raise Exception(f"DeepSeek Error: {data.get('content')} (reason: {data.get('finish_reason')})")
+                                    if printing:
+                                        print(f"\n[Toast] {data.get('content') if type(data)==dict else data}\n")
                                 else:
-                                    raise Exception(f"Unknown event: {event}\nData: {line}")
+                                    if printing:
+                                        print(f"\n[Warning] Unknown event: {event} with data: {data}\n")
                             elif line.startswith('event: '):
                                 event=line[7:]
                             else:
-                                raise Exception(f"Unrecognizable line: {line}\nData: {line}")
+                                if printing:
+                                    print(f"\n[Warning] Unrecognizable line: {line}\n")
+
                         else:
                             raise Exception(f"Unexpected response consisting of {type(line)}")
                 if printing:
