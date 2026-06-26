@@ -161,6 +161,8 @@ class DeepSeekChat:
                     if type(data)==str:
                         if generate_mode=='THINK':
                             think+=data
+                            if not thinking_enabled:
+                                respond+=data
                         elif generate_mode in ('RESPONSE', ''):
                             # '' mode: DeepSeek may send content before explicit type event (e.g. fragments/-1/content)
                             respond+=data
@@ -222,7 +224,6 @@ class DeepSeekChat:
                     else:
                         if printing:
                             print(f"\n[Warning] Unrecognizable type {type(data)}: {data}\n")
-                send_to_sd('\n')
                 for line in response.iter_lines(decode_unicode=True):
                     if line and len(line)>0:
                         if type(line)==str:
