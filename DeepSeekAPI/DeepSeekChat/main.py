@@ -76,23 +76,24 @@ class DeepSeekChat:
         else:
             return None
     def solve_pow_challenge(self, challenge_data):
+        import subprocess, json as _json, os, sys
         try:
-            from .DeepSeekWASM import solve_wasm
-            algorithm = challenge_data["algorithm"]
-            challenge = challenge_data["challenge"]
-            salt = challenge_data["salt"]
-            expire_at = challenge_data["expire_at"]
-            difficulty = challenge_data["difficulty"]
-            signature = challenge_data["signature"]
-            target_path = challenge_data["target_path"]
-            value, pow_response = solve_wasm(algorithm, challenge, salt, expire_at, difficulty, signature, target_path)
-            if value:
-                return True, pow_response
-            return False,''
-        except ImportError:
-            raise
+            worker = os.path.join(os.path.dirname(__file__), "DeepSeekWASM", "solve_pow_worker.py")
+            proc = subprocess.run(
+                [sys.executable, worker],
+                input=_json.dumps(challenge_data),
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+            if proc.returncode != 0:
+                return False, ''
+            result = _json.loads(proc.stdout)
+            if result.get("ok") and result.get("answer") is not None:
+                return True, result["result"]
+            return False, ''
         except Exception as e:
-            return False,''
+            return False, ''
     def send_message(self,message,printing=None,thinking_enabled=False,search_enabled=False,model_type="default",text_callback=None):
         if model_type not in ("default", "expert"):
             return {"ok": False, "content": "model_type must be 'default' or 'expert'."}
