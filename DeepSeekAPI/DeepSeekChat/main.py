@@ -192,6 +192,10 @@ class DeepSeekChat:
                         elif 'message_id' in data or 'parent_id' in data:
                             parid=data.get('parent_id',parid)
                             msgid=data.get('message_id',msgid)
+                            if 'fragments' in data:
+                                for f in data['fragments']:
+                                    if isinstance(f, dict) and 'content' in f:
+                                        parse_output(f['content'], line)
                         elif 'updated_at' in data and len(data)==1:
                             return #CURRENTLY no use of this value
                         elif 'p' in data:
@@ -210,8 +214,7 @@ class DeepSeekChat:
                             elif tp=='has_pending_fragment' or tp=='conversation_mode' or tp=='quasi_status':
                                 pass
                             else:
-                                if printing:
-                                    print(f"\n[Warning] Unknown 'p' field: {tp} in data: {data}\n")
+                                parse_output(data['v'], line)
                         elif 'type' in data and data['type']:
                             if generate_mode!=data['type']:
                                 if printing:
